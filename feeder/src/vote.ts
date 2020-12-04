@@ -12,6 +12,7 @@ import {
   Wallet,
   MsgAggregateExchangeRateVote,
 } from '@terra-money/terra.js'
+import { getPricesFromLCD } from './lcdUtils'
 
 const ax = axios.create({
   httpAgent: new http.Agent({ keepAlive: true }),
@@ -196,7 +197,7 @@ export async function processVote(
 
   // Removes non-whitelisted currencies and abstain vote for currencies that are not in denoms parameter
   // Abstain for not fetched currencies
-  const prices = filterPrices(await getPrices(priceURLs), oracleWhitelist, denoms)
+  const prices = filterPrices(await getPricesFromLCD(client), oracleWhitelist, denoms)
 
   // Build Exchage Rate Vote Msgs
   const voteMsgs: MsgAggregateExchangeRateVote[] = buildVoteMsgs(prices, valAddrs, voterAddr)
