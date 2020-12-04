@@ -6,6 +6,10 @@ module.exports = {
     channel: '#bot-test',
     url: '',
   },
+  discord: {
+    // for incident alarm (e.g. exchange shutdown)
+    url: '',
+  },
   lunaProvider: {
     adjustTvwapSymbols: ['LUNA/KRW', 'LUNA/USDT'],
     bithumb: { symbols: ['LUNA/KRW'] },

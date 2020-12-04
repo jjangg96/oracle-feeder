@@ -2,6 +2,7 @@ import { BigNumber } from 'bignumber.js'
 import { concat } from 'lodash'
 import * as logger from 'lib/logger'
 import { sendSlack } from 'lib/slack'
+import { sendDiscord } from 'lib/discord'
 import { getQuoteCurrency, getBaseCurrency } from 'lib/currency'
 import { TradesBySymbol, Trades, PriceBySymbol } from './types'
 import { format } from 'date-fns'
@@ -162,6 +163,7 @@ export class Quoter {
 
       logger.info(msg)
       sendSlack(msg).catch()
+      sendDiscord(msg).catch()
 
       this.isAlive = true
     }
@@ -176,6 +178,7 @@ export class Quoter {
 
       logger.warn(msg)
       sendSlack(msg).catch()
+      sendDiscord(msg).catch()
 
       this.isAlive = false
     }
