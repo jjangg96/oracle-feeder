@@ -70,7 +70,7 @@ export class Quoter {
     return this.symbols
   }
 
-  public getPrice(symbol: string): BigNumber {
+  public getPrice(symbol: string): BigNumber | undefined {
     return this.isAlive ? this.priceBySymbol[symbol] : undefined
   }
 

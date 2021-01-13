@@ -1,31 +1,40 @@
 import { BigNumber } from 'bignumber.js'
 import { getQuoteCurrency } from 'lib/currency'
-import { PriceBySymbol } from 'provider/base'
-import { lunaProvider, fiatProvider, cryptoProvider } from 'provider'
 import { num } from 'lib/num'
 import * as logger from 'lib/logger'
+import { PriceBySymbol } from 'provider/base'
+import { lunaProvider, fiatProvider, cryptoProvider } from 'provider'
 
 export function getLunaPrices(): PriceBySymbol {
-  const baseSymbol = 'LUNA/KRW'
+  const helpers: PriceBySymbol = {
+    'LUNA/USDT': lunaProvider.getPriceBy('LUNA/USDT'), // tvwap(binance, huobi)
+    'USDT/USD': cryptoProvider.getPriceBy('USDT/USD'), // tvwap(Kraken, Bitfinex)
+    'KRW/USD': fiatProvider.getPriceBy('KRW/USD'),
+  }
   const prices: PriceBySymbol = {
-    [baseSymbol]: lunaProvider.getPriceBy(baseSymbol),
+    'LUNA/KRW': lunaProvider.getPriceBy('LUNA/KRW'),
   }
 
-  if (!prices[baseSymbol]) {
-    return {}
+  if (helpers['LUNA/USDT'] && helpers['USDT/USD']) {
+    // LUNA/USD = LUNA/USDT * USDT/USD
+    prices['LUNA/USD'] = helpers['LUNA/USDT'].multipliedBy(helpers['USDT/USD'])
   }
 
   // make 'LUNA/FIAT' rates
-  for (const symbol of Object.keys(fiatProvider.getPrices())) {
-    prices[`LUNA/${getQuoteCurrency(symbol)}`] = fiatProvider
-      .getPriceBy(symbol)
-      .multipliedBy(prices[baseSymbol])
+  if (helpers['KRW/USD'] && prices['LUNA/USD']) {
+    Object.keys(fiatProvider.getPrices())
+        .filter((symbol) => symbol !== 'KRW/USD')
+        .map((symbol) => {
+          const exchangeRate = helpers['KRW/USD'].dividedBy(fiatProvider.getPriceBy(symbol))
+
+          prices[`LUNA/${getQuoteCurrency(symbol)}`] = prices['LUNA/USD'].dividedBy(exchangeRate)
+        })
   }
 
   return prices
 }
 
-export function getBtcPremium(): BigNumber {
+export function getBtcPremium(): BigNumber | undefined {
   try {
     const prices: { [symbol: string]: BigNumber } = {
       'BTC/KRW': cryptoProvider.getPriceBy('BTC/KRW'), // tvwap(upbit, bithumb)
@@ -42,7 +51,7 @@ export function getBtcPremium(): BigNumber {
 
     // BTC PREMIUM = BTC/KRW / (BTC/USDT 최근체결가 * USDT/USD * USD/KRW)
     const btcPremium = prices['BTC/KRW'].dividedBy(
-      prices['BTC/USDT'].multipliedBy(prices['USDT/USD']).multipliedBy(prices['USD/KRW'])
+        prices['BTC/USDT'].multipliedBy(prices['USDT/USD']).multipliedBy(prices['USD/KRW'])
     )
     if (!btcPremium || btcPremium.isNaN() === true) {
       throw new Error(`wrong btc premium(${btcPremium})`)
@@ -55,7 +64,7 @@ export function getBtcPremium(): BigNumber {
   }
 }
 
-export function getUsdtToKrwRate(): BigNumber {
+export function getUsdtToKrwRate(): BigNumber | undefined {
   try {
     const prices: { [symbol: string]: BigNumber } = {
       'USDT/USD': cryptoProvider.getPriceBy('USDT/USD'), // tvwap(Kraken, Bitfinex)

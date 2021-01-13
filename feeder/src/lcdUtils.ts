@@ -10,6 +10,7 @@ export async function getPricesFromLCD(client: LCDClient): Promise<Price[]> {
   console.info(`getting price data from lcd`)
 
   return client.oracle.exchangeRates().then((results) => {
+    console.log('oracle from lcd', results)
     return results.toArray().map((coin) => {
       return { currency: coin.denom.substring(1).toUpperCase(), price: coin.amount.toString() }
     })
