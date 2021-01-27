@@ -45,7 +45,7 @@ function registerCommands(parser: ArgumentParser): void {
   voteCommand.addArgument([`-s`, `--source`], {
     action: `append`,
     help: `Append price data source(It can handle multiple sources)`,
-    required: false,
+    required: true,
   })
 
   voteCommand.addArgument([`-p`, `--password`], {
