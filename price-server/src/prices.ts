@@ -23,12 +23,12 @@ export function getLunaPrices(): PriceBySymbol {
   // make 'LUNA/FIAT' rates
   if (helpers['KRW/USD'] && prices['LUNA/USD']) {
     Object.keys(fiatProvider.getPrices())
-        .filter((symbol) => symbol !== 'KRW/USD')
-        .map((symbol) => {
-          const exchangeRate = helpers['KRW/USD'].dividedBy(fiatProvider.getPriceBy(symbol))
+      .filter((symbol) => symbol !== 'KRW/USD')
+      .map((symbol) => {
+        const exchangeRate = helpers['KRW/USD'].dividedBy(fiatProvider.getPriceBy(symbol))
 
-          prices[`LUNA/${getQuoteCurrency(symbol)}`] = prices['LUNA/USD'].dividedBy(exchangeRate)
-        })
+        prices[`LUNA/${getQuoteCurrency(symbol)}`] = prices['LUNA/USD'].dividedBy(exchangeRate)
+      })
   }
 
   return prices
@@ -51,7 +51,7 @@ export function getBtcPremium(): BigNumber | undefined {
 
     // BTC PREMIUM = BTC/KRW / (BTC/USDT 최근체결가 * USDT/USD * USD/KRW)
     const btcPremium = prices['BTC/KRW'].dividedBy(
-        prices['BTC/USDT'].multipliedBy(prices['USDT/USD']).multipliedBy(prices['USD/KRW'])
+      prices['BTC/USDT'].multipliedBy(prices['USDT/USD']).multipliedBy(prices['USD/KRW'])
     )
     if (!btcPremium || btcPremium.isNaN() === true) {
       throw new Error(`wrong btc premium(${btcPremium})`)
