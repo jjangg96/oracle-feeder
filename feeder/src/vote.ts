@@ -11,6 +11,7 @@ import {
   Wallet,
   MsgAggregateExchangeRateVote,
   isTxError,
+  StdFee,
 } from '@terra-money/terra.js'
 import { getPricesFromLCD } from './lcdUtils'
 import * as packageInfo from '../package.json'
@@ -18,7 +19,7 @@ import * as packageInfo from '../package.json'
 const ax = axios.create({
   httpAgent: new http.Agent({ keepAlive: true }),
   httpsAgent: new https.Agent({ keepAlive: true }),
-  timeout: 30000,
+  timeout: 10000,
   headers: {
     post: {
       'Content-Type': 'application/json',
@@ -207,6 +208,7 @@ export async function processVote(
   const msgs = [...previousVoteMsgs, ...voteMsgs.map((vm) => vm.getPrevote())]
   const tx = await wallet.createAndSignTx({
     msgs,
+    fee: new StdFee(1000000, []),
     memo: `${packageInfo.name}@${packageInfo.version}`,
   })
 
@@ -235,10 +237,10 @@ export async function processVote(
 
 async function validateTx(client: LCDClient, txhash: string): Promise<number> {
   let height = 0
-  let max_retry = 20
+  let max_retry = 28
 
   while (!height && max_retry > 0) {
-    await Bluebird.delay(1000)
+    await Bluebird.delay(500)
     max_retry--
 
     await client.tx
@@ -297,6 +299,6 @@ export async function vote(args: VoteArgs): Promise<void> {
       previousVoteMsgs = []
     })
 
-    await Bluebird.delay(Math.max(3000, 3000 - (Date.now() - startTime)))
+    await Bluebird.delay(Math.max(500, 500 - (Date.now() - startTime)))
   }
 }

@@ -12,6 +12,7 @@ const fiatSymbols = [
   'KRW/HKD',
   'KRW/AUD',
   'KRW/SGD',
+  'KRW/THB',
 ]
 
 module.exports = {
@@ -61,12 +62,18 @@ module.exports = {
       apiKey: '', // necessary
     },
     alphavantage: {
-      symbols: fiatSymbols,
+      symbols: fiatSymbols.filter((symbol) => !symbol.includes('MNT')),
       interval: 60 * 1000,
       timeout: 5000,
       // https://www.alphavantage.co/premium/
       // recommend: 120 API request per minute: $49.99/month
       apiKey: '', // necessary
+    },
+    bandprotocol: {
+      symbols: fiatSymbols,
+      interval: 60 * 1000,
+      timeout: 5000,
+      // https://data.bandprotocol.com/
     },
   },
 }
