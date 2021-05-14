@@ -13,7 +13,6 @@ import {
   isTxError,
   StdFee,
 } from '@terra-money/terra.js'
-import { getPricesFromLCD } from './lcdUtils'
 import * as packageInfo from '../package.json'
 
 const ax = axios.create({
@@ -203,7 +202,7 @@ export async function processVote(
 
   // Removes non-whitelisted currencies and abstain vote for currencies that are not in denoms parameter
   // Abstain for not fetched currencies
-  const prices = filterPrices(await getPricesFromLCD(client), oracleWhitelist, denoms)
+  const prices = filterPrices(await getPrices(priceURLs), oracleWhitelist, denoms)
 
   // Build Exchange Rate Vote Msgs
   const voteMsgs: MsgAggregateExchangeRateVote[] = buildVoteMsgs(prices, valAddrs, voterAddr)
@@ -212,7 +211,7 @@ export async function processVote(
   const msgs = [...previousVoteMsgs, ...voteMsgs.map((vm) => vm.getPrevote())]
   const tx = await wallet.createAndSignTx({
     msgs,
-    fee: new StdFee(200000, []),
+    fee: new StdFee(msgs.length * 100000, []),
     memo: `${packageInfo.name}@${packageInfo.version}`,
   })
 
