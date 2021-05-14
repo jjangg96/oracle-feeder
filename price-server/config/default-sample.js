@@ -13,6 +13,7 @@ const fiatSymbols = [
   'KRW/AUD',
   'KRW/SGD',
   'KRW/THB',
+  'KRW/SEK',
 ]
 
 module.exports = {
@@ -40,7 +41,7 @@ module.exports = {
     upbit: { symbols: ['BTC/KRW'] },
     bithumb: { symbols: ['BTC/KRW'] },
     binance: { symbols: ['BTC/USDT'] },
-    huobi: { symbols: ['LUNA/USDT'] },
+    huobi: { symbols: ['BTC/USDT'] },
     bitfinex: { symbols: ['USDT/USD'] },
     kraken: { symbols: ['USDT/USD'] },
   },
@@ -74,6 +75,12 @@ module.exports = {
       interval: 60 * 1000,
       timeout: 5000,
       // https://data.bandprotocol.com/
+    },
+    exchangerate: {
+      symbols: fiatSymbols,
+      interval: 60 * 1000,
+      timeout: 5000,
+      // https://exchangerate.host/
     },
   },
 }
