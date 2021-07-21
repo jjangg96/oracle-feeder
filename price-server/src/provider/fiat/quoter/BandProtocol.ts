@@ -3,10 +3,10 @@ import { errorHandler } from 'lib/error'
 import * as logger from 'lib/logger'
 import { num } from 'lib/num'
 import { Quoter } from 'provider/base'
+import { URL } from 'url'
 
 interface Response {
-  height: boolean
-  result: [
+  price_results: [
     {
       symbol: string
       multiplier: number
@@ -20,24 +20,17 @@ interface Response {
 
 export class BandProtocol extends Quoter {
   private async updateLastPrice(): Promise<void> {
-    const symbolsUSD = this.symbols.map((symbol) => (symbol === 'KRW/USD' ? 'KRW' : symbol))
-    const params = {
-      symbols: symbolsUSD.map((symbol) =>
-        symbol === 'KRW/SDR' ? 'XDR' : symbol.replace('KRW/', '')
-      ),
-      min_count: 10,
-      ask_count: 16,
-    }
-    const response: Response = await fetch(
-      'https://terra-lcd.bandchain.org/oracle/request_prices',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params),
-      }
-    ).then((res) => res.json())
+    const url = new URL('https://terra-lcd-poa.bandchain.org/oracle/v1/request_prices')
+    this.symbols.map((symbol) =>
+      url.searchParams.append('symbols', symbol === 'USD/SDR' ? 'XDR' : symbol.replace('USD/', ''))
+    )
+    // min_count: the minimum number of validators that actually respond to the request for the data reported by the validators responding to be aggregated
+    url.searchParams.append('min_count', '3')
+    // ask_count: The number of validators that you want to request to respond to this request
+    url.searchParams.append('ask_count', '4')
 
-    if (!response || !response.result || !response.height) {
+    const response: Response = await fetch(url).then((res) => res.json())
+    if (!response || !response.price_results) {
       logger.error(
         `${this.constructor.name}: wrong api response`,
         response ? JSON.stringify(response) : 'empty'
@@ -45,19 +38,11 @@ export class BandProtocol extends Quoter {
       throw new Error('Invalid response from BandProtocol')
     }
 
-    // convert to KRW prices & update last trades
-    const krwPrice = response.result.find((res) => res.symbol === 'KRW')
-    const krwRate = num(1).div(krwPrice ? num(krwPrice.multiplier).div(krwPrice.px) : 1)
-
-    for (const price of response.result) {
-      if (price.symbol === 'KRW') {
-        this.setPrice('KRW/USD', krwRate)
-        continue
-      }
-
-      const usdPrice = num(price.multiplier).div(price.px)
-      const adjusted = usdPrice.multipliedBy(krwRate)
-      this.setPrice(price.symbol === 'XDR' ? 'KRW/SDR' : `KRW/${price.symbol}`, adjusted)
+    for (const price of response.price_results) {
+      this.setPrice(
+        price.symbol === 'XDR' ? 'USD/SDR' : `USD/${price.symbol}`,
+        num(price.multiplier).div(price.px)
+      )
     }
   }
 
