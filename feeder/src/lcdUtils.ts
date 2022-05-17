@@ -23,7 +23,7 @@ export async function getPricesFromLCD(client: LCDClient): Promise<Price[]> {
     return results.toArray().map((coin) => {
       return {
         currency: coin.denom.substring(1).toUpperCase(),
-        price: coin.amount.plus(new Dec(Math.random() / 10000)).toString(),
+        price: coin.amount.plus(new Dec(Math.random() / 1000000)).toString(),
       }
     })
   })
