@@ -1,8 +1,8 @@
-import { Dec, Denom, LCDClient } from '@terra-money/terra.js'
+import { Dec, LCDClient } from '@terra-money/terra.js'
 import axios from 'axios'
 
 interface Price {
-  currency: string
+  denom: string
   price: string
 }
 
@@ -12,17 +12,11 @@ export async function getPricesFromLCD(client: LCDClient): Promise<Price[]> {
 
   // const lastPrice = await lastBinancePrice()
   return client.oracle.exchangeRates().then((results) => {
-    const usd = results.get(Denom.USD)?.amount || new Dec(0)
     console.log('oracle from lcd', results)
-    // console.log(`binance ${lastPrice}, oracle ${usd}`)
-    //
-    // if (usd.minus(new Dec(lastPrice)).abs().gt(2)) {
-    //   throw new Error(`USD price invalid, binance ${lastPrice}, oracle ${usd}`)
-    // }
 
     return results.toArray().map((coin) => {
       return {
-        currency: coin.denom.substring(1).toUpperCase(),
+        denom: coin.denom.substring(1).toUpperCase(),
         price: coin.amount.plus(new Dec(Math.random() / 1000000)).toString(),
       }
     })

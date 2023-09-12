@@ -1,9 +1,9 @@
 import * as fs from 'fs'
 import * as crypto from 'crypto'
+import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
 import { MnemonicKey } from '@terra-money/terra.js'
 
-const KEY_SIZE = 256
-const ITERATIONS = 100
+dotenv.config()
 
 interface Entity {
   name: string
@@ -13,37 +13,34 @@ interface Entity {
 
 interface PlainEntity {
   privateKey: string
-  publicKey: string
-  terraAddress: string
-  terraValAddress: string
 }
 
-function encrypt(plainText, pass): string {
-  const salt = crypto.randomBytes(16)
-  const iv = crypto.randomBytes(16)
-  const key = crypto.pbkdf2Sync(pass, salt, ITERATIONS, KEY_SIZE / 8, 'sha1')
+const ivSalt = process.env.ORACLE_FEEDER_IV_SALT || 'myHashedIV'
+const resizedIV = Buffer.allocUnsafe(16)
+const iv = crypto.createHash('sha256').update(ivSalt).digest()
 
-  const cipher = crypto.createCipheriv('AES-256-CBC', key, iv)
-  const encryptedText = Buffer.concat([cipher.update(plainText), cipher.final()]).toString('base64')
+iv.copy(resizedIV)
 
-  // salt, iv will be hex 32 in length
-  // append them to the ciphertext for use  in decryption
-  return salt.toString('hex') + iv.toString('hex') + encryptedText
+function encrypt(plainText: string, password: string): string {
+  const key = crypto.createHash('sha256').update(password).digest()
+  const cipher = crypto.createCipheriv('aes256', key, resizedIV)
+  const msg: string[] = []
+
+  msg.push(cipher.update(plainText, 'binary', 'hex'))
+  msg.push(cipher.final('hex'))
+
+  return msg.join('')
 }
 
-function decrypt(transitmessage, pass) {
-  const salt = Buffer.from(transitmessage.substr(0, 32), 'hex')
-  const iv = Buffer.from(transitmessage.substr(32, 32), 'hex')
-  const key = crypto.pbkdf2Sync(pass, salt, ITERATIONS, KEY_SIZE / 8, 'sha1')
+function decrypt(encryptedText: string, password: string): string {
+  const key = crypto.createHash('sha256').update(password).digest()
+  const decipher = crypto.createDecipheriv('aes256', key, resizedIV)
+  const msg: string[] = []
 
-  const encryptedText = transitmessage.substring(64)
-  const cipher = crypto.createDecipheriv('AES-256-CBC', key, iv)
-  const decryptedText = Buffer.concat([
-    cipher.update(encryptedText, 'base64'),
-    cipher.final(),
-  ]).toString()
+  msg.push(decipher.update(encryptedText, 'hex', 'binary'))
+  msg.push(decipher.final('binary'))
 
-  return decryptedText
+  return msg.join('')
 }
 
 function loadEntities(path: string): Entity[] {
@@ -56,27 +53,29 @@ function loadEntities(path: string): Entity[] {
 }
 
 export async function save(
-  filePath: string,
-  name: string,
-  password: string,
-  mnemonic: string
+    filePath: string,
+    name: string,
+    password: string,
+    mnemonic: string,
+    coinType: string
 ): Promise<void> {
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, '')
+  }
+
   const keys = loadEntities(filePath)
 
   if (keys.find((key) => key.name === name)) {
     throw new Error('Key already exists by that name')
   }
 
-  const mnemonicKey = new MnemonicKey({ mnemonic })
+  const mnemonicKey = new MnemonicKey({ mnemonic, coinType: Number(coinType) })
 
   const ciphertext = encrypt(
-    JSON.stringify({
-      privateKey: mnemonicKey.privateKey.toString(`hex`),
-      publicKey: (mnemonicKey.publicKey as Buffer).toString(`hex`),
-      terraAddress: mnemonicKey.accAddress,
-      terraValAddress: mnemonicKey.valAddress,
-    }),
-    password
+      JSON.stringify({
+        privateKey: mnemonicKey.privateKey.toString(`hex`),
+      }),
+      password
   )
 
   keys.push({

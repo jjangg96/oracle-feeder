@@ -1,13 +1,29 @@
 # `feeder`
 
-This program will submit exchange rate prevotes and votes, implementing the [voting procedure](https://docs.terra.money/dev/spec-oracle.html#voting-procedure). 
+Submit exchange rate prevotes and votes, implementing the [voting procedure](https://github.com/terra-money/andromeda-oracle/blob/main/x/oracle/spec/01_concepts.md#voting-procedure).
 
-## Requirements
+## Make a new key for oracle votes
 
-Oracle Feeder requires the following:
+You can separate the keys used for controlling a validator account from those that are submitting oracle votes on behalf of a validator. Run:
 
-- Set up a running [`price-server`](../price-server/)
-- An account which has feeder rights for a validator (instructions [here](https://docs.terra.money/validator/setup.html#delegate-feeder-consent))
+```bash
+oracled keys add <feeder>
+```
+
+Show the feeder account details:
+
+```bash
+oracled keys show <feeder>
+```
+
+## Delegate feeder consent
+
+The account address used to submit oracle voting transactions is called a `feeder`. When you set up your oracle voting process for the first time, you must delegate the feeder permission to an account.
+
+```bash
+oracled tx oracle set-feeder <feeder-address> --from=<validator>
+```
+
 
 ## Instructions
 
@@ -22,7 +38,7 @@ npm install
 You need the mnemonic phrase for the **feeder account** for your validator.
 
 ```sh
-npm start update-key
+npm start add-key
 
 Enter a passphrase to encrypt your key to disk: ********
 Repeat the passphrase: ********
@@ -40,13 +56,12 @@ You can start feeder with arguments or env.
 * Arguments
    ``` shell
    $ npm start vote -- \
-      --source http://localhost:8532/latest \
-      --lcd https://lcd-1.terra.dev \
-      --lcd https://lcd-2.terra.dev \
-      --chain-id columbus-5 \
-      --validator terravaloper1xx \
-      --validator terravaloper1yy \
-      --password "<password>"
+      -d http://localhost:8532/latest \
+      --lcd-url https://lcd.terraclassic.community \
+      --chain-id colmbus-5 \
+      --validators terravaloper1xx \
+      --validators terravaloper1yy \
+      --password <password>
    ```
 
 * Env
@@ -56,11 +71,15 @@ You can start feeder with arguments or env.
    ```
 
 
-| Argument    | Env           | Description                                      | Example                      |
-| ----------- | ------------- | ------------------------------------------------ | ---------------------------- |
-| `source`    | `SOURCE`      | Price server URL.                                | http://localhost:8532/latest |
-| `lcd`       | `LCD_ADDRESS` | LCD server URL (can be multiple)                 | https://lcd.terra.dev        |
-| `chain-id`  | `CHAIN_ID`    | Chain ID.                                        | `columbus-5`                 |
-| `validator` | `VALIDATOR`   | Validator to submit prices for (can be multiple) | `terravaloper1xx...`         |
-| `password`  | `PASSPHRASE`  | Password for mnemonic (assigned in step #2)      | `12345678`                   |
-| `key-path`  | `KEY_PATH`    | signing key store path (default voter.json)      | `voter.json`                 |
+| Argument              | Env                              | Description                                               | Example                        |
+| --------------------- | -------------------------------- | --------------------------------------------------------- | ------------------------------ |
+| `password`            | `ORACLE_FEEDER_PASSWORD`         | Password for mnemonic (assigned in step #2)               | `12345678`                     |
+| `data-source-url`     | `ORACLE_FEEDER_DATA_SOURCE_URL`  | Price server URL.                                         | http://localhost:8532/latest   |
+| `lcd-url`             | `ORACLE_FEEDER_LCD_ADDRESS`      | LCD server URL (can be multiple)                          | https://lcd.terraclassic.community |
+| `chain-id`            | `ORACLE_FEEDER_CHAIN_ID`         | Chain ID.                                                 | `colmbus-5         `           |
+| `validators`          | `ORACLE_FEEDER_VALIDATORS`       | Validator to submit prices for (can be multiple)          | `terravaloper1xx...`           |
+| `key-name`            | `ORACLE_FEEDER_KEY_NAME`         | name to be given to the key that will be encrypted in file| `voter`                        |
+| `coin-type`           | `ORACLE_FEEDER_COIN_TYPE`        | coin type used to derive the public address (default 330) | `330`                          |
+| `key-path`            | `ORACLE_FEEDER_KEY_PATH`         | signing key store path (default voter.json)               | `voter.json`                   |
+| Unsupported           | `ORACLE_FEEDER_ADDR_PREFIX`      |                                                           | `terra`                        |
+| Unsupported           | `ORACLE_FEEDER_IV_SALT`          | salt used in IV vector                                    | `myHashedIV`                   |
