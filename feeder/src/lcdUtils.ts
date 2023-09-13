@@ -10,32 +10,35 @@ export async function getPricesFromLCD(client: LCDClient): Promise<Price[]> {
   console.info(`timestamp: ${new Date().toUTCString()}`)
   console.info(`getting price data from lcd`)
 
-  // const lastPrice = await lastBinancePrice()
+  const lastPrice = await lastLuncPriceFromGecko()
   return client.oracle.exchangeRates().then((results) => {
     console.log('oracle from lcd', results)
 
+    results.set('ulunc', lastPrice)
     return results.toArray().map((coin) => {
+      if (coin.denom === 'ulunc') {
+        return {
+          denom: coin.denom.substring(1).toUpperCase(),
+          price: coin.amount.toString(),
+        }
+      }
+
       return {
         denom: coin.denom.substring(1).toUpperCase(),
-        price: coin.amount.plus(new Dec(Math.random() / 1000000)).toString(),
+        price: new Dec(lastPrice).div(coin.amount).toString(),
       }
     })
   })
 }
 
-// const lastBinancePrice = async (): Promise<number> => {
-//   const params = { symbol: 'LUNAUSDT', interval: '1m', limit: 1 }
-//   const query = Object.keys(params)
-//     .map((key) => `${key}=${params[key]}`)
-//     .join('&')
-//
-//   return await axios
-//     .get(`https://api.binance.com/api/v3/klines?${query}`)
-//     .then((res) => {
-//       return parseFloat(res.data[0][4])
-//     })
-//     .catch((e) => {
-//       console.log(`lastPrice(): invalid api response:`, e ? JSON.stringify(e) : 'empty')
-//       throw new Error(`lastPrice(): invalid response`)
-//     })
-// }
+const lastLuncPriceFromGecko = async (): Promise<number> => {
+  return await axios
+    .get(`https://api.coingecko.com/api/v3/simple/price?ids=terra-luna&vs_currencies=usd`)
+    .then((res) => {
+      return parseFloat(res.data['terra-luna']['usd'])
+    })
+    .catch((e) => {
+      console.log(`lastLuncPriceFromGecko(): invalid api response:`, e ? JSON.stringify(e) : 'empty')
+      throw new Error(`lastLuncPriceFromGecko(): invalid response`)
+    })
+}
