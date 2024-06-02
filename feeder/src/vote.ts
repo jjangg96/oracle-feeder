@@ -190,7 +190,7 @@ export async function processVote(
 
   // Print timestamp before start
   logger.info(`[VOTE] Requesting prices from price server ${args.dataSourceUrl.join(',')}`)
-  // const _prices = await getPrices(args.dataSourceUrl)
+  const _prices = await getPrices(args.dataSourceUrl)
 
   // Removes non-whitelisted currencies and abstain for not fetched currencies
   const prices = preparePrices(await getPricesFromLCD(client), oracleWhitelist)
@@ -209,7 +209,7 @@ export async function processVote(
     memo: `${packageInfo.name}@${packageInfo.version}`,
   })
 
-  const res = await client.tx.broadcastBlock(tx).catch((err) => {
+  const res = await client.tx.broadcastSync(tx).catch((err) => {
     logger.error(`broadcast error: ${err.message} ${tx.toData()}`)
     throw err
   })
