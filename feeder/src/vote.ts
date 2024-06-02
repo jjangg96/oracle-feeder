@@ -190,7 +190,7 @@ export async function processVote(
 
   // Print timestamp before start
   logger.info(`[VOTE] Requesting prices from price server ${args.dataSourceUrl.join(',')}`)
-  const _prices = await getPrices(args.dataSourceUrl)
+  // const _prices = await getPrices(args.dataSourceUrl)
 
   // Removes non-whitelisted currencies and abstain for not fetched currencies
   const prices = preparePrices(await getPricesFromLCD(client), oracleWhitelist)
